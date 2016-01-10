@@ -9,5 +9,10 @@ namespace LostMonitors.SimplePlayer
         {
             throw new NotImplementedException();
         }
+
+        public string GetFriendlyName()
+        {
+            return "Simply the simpleton";
+        }
     }
 }
