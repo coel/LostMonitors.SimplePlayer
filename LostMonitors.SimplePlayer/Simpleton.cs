@@ -13,8 +13,8 @@ namespace LostMonitors.SimplePlayer
 
             foreach (var card in yourCards)
             {
-                var yourExpedition = currentState.YourExpeditions[card.Destination];
-                if (!yourExpedition.Any() || card.Value > yourExpedition.Last().Value)
+                var yourExpedition = currentState.YourExpeditions[card.Destination].OrderBy(x => x.Value);
+                if (!yourExpedition.Any() || card.Value >= yourExpedition.Last().Value)
                 {
                     myTurn = new Turn(card);
                     break;
