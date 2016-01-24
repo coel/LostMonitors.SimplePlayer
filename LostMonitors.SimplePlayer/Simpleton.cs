@@ -7,27 +7,29 @@ namespace LostMonitors.SimplePlayer
     public class Simpleton : IPlayer
     {
         private const int MaxExpeditions = 3;
+        private const int CardsRemainingPanic = 12;
 
         public void Play(BoardState currentState, Turn theirMove, Func<Turn, Card> draw)
         {
             var yourCards = currentState.YourCards.OrderBy(x => x.Value);
 
-            // Simple play the lowest card and discard it if it can't be played (value too high or would start more than MaxExpeditions expeditions)
+            // Simply play the lowest card and discard it if it can't be played (value too high or would start more than MaxExpeditions expeditions)
             var myTurn = new Turn(yourCards.First());
+            myTurn.Discard = !CanPlay(currentState, myTurn.Card);
 
-            var yourExpedition = currentState.YourExpeditions[myTurn.Card.Destination].OrderBy(x => x.Value);
-
-            var expeditionsRunning = currentState.YourExpeditions.Count(x => x.Value.Any());
-            if (!yourExpedition.Any() && expeditionsRunning >= MaxExpeditions)
+            // If there are less than CardsRemainingPanic cards left, try to play cards rather than discarding if possible
+            if (myTurn.Discard && currentState.CardsRemaining < CardsRemainingPanic)
             {
-                myTurn.Discard = true;
+                foreach (var card in yourCards)
+                {
+                    if (CanPlay(currentState, card))
+                    {
+                        myTurn = new Turn(card);
+                        break;
+                    }
+                }
             }
 
-            if (yourExpedition.Any() && myTurn.Card.Value < yourExpedition.Last().Value)
-            {
-                myTurn.Discard = true;
-            }
-            
             // Take the first (if any) discard that can be played on existing expeditions
             foreach (var destination in currentState.Discards)
             {
@@ -51,6 +53,23 @@ namespace LostMonitors.SimplePlayer
             }
 
             draw(myTurn);
+        }
+
+        private static bool CanPlay(BoardState currentState, Card card)
+        {
+            var yourExpedition = currentState.YourExpeditions[card.Destination].OrderBy(x => x.Value);
+
+            var expeditionsRunning = currentState.YourExpeditions.Count(x => x.Value.Any());
+            if (!yourExpedition.Any() && expeditionsRunning >= MaxExpeditions)
+            {
+                return false;
+            }
+
+            if (yourExpedition.Any() && card.Value < yourExpedition.Last().Value)
+            {
+                return false;
+            }
+            return true;
         }
 
         public string GetFriendlyName()
