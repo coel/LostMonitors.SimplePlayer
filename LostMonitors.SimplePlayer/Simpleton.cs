@@ -7,7 +7,6 @@ namespace LostMonitors.SimplePlayer
     public class Simpleton : IPlayer
     {
         private const int MaxExpeditions = 3;
-        private const int CardsRemainingPanic = 12;
 
         public void Play(BoardState currentState, Turn theirMove, Func<Turn, Card> draw)
         {
@@ -17,16 +16,13 @@ namespace LostMonitors.SimplePlayer
             var myTurn = new Turn(yourCards.First());
             myTurn.Discard = !CanPlay(currentState, myTurn.Card);
 
-            // If there are less than CardsRemainingPanic cards left, try to play cards rather than discarding if possible
-            if (myTurn.Discard && currentState.CardsRemaining < CardsRemainingPanic)
+            if (myTurn.Discard)
             {
-                foreach (var card in yourCards)
+                // If it looks we're running out of remaining cards, try to play cards rather than discarding if possible
+                var playableCards = yourCards.Where(x => CanPlay(currentState, x)).ToList();
+                if (currentState.CardsRemaining <= playableCards.Count() * 2)
                 {
-                    if (CanPlay(currentState, card))
-                    {
-                        myTurn = new Turn(card);
-                        break;
-                    }
+                    myTurn = new Turn(playableCards.First());
                 }
             }
 
